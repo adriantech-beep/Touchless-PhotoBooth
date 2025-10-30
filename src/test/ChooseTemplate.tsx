@@ -1,13 +1,13 @@
 import QRDownloadImages from "@/components/ui/QRDownloadImages";
 import { usePhotoStore } from "@/store/photoStore";
 import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const ChooseTemplate = () => {
   const { state } = useLocation();
   const blobs = usePhotoStore((s) => s.blobs);
   const layout: string = state?.layout || "";
-
+  const navigate = useNavigate();
   useEffect(() => {
     const targetElement = document.getElementById("myDiv");
     if (!targetElement || !layout) return;
@@ -30,18 +30,6 @@ const ChooseTemplate = () => {
       </p>
     );
   }
-
-  // const handlePrint = async () => {
-  //   const node = document.getElementById("myDiv");
-  //   if (!node) return;
-
-  //   try {
-  //     const dataUrl = await toPng(node, { cacheBust: true });
-  //     window.electronAPI.printImage(dataUrl); // send to Electron main process
-  //   } catch (err) {
-  //     console.error("Export failed", err);
-  //   }
-  // };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-black">
@@ -76,7 +64,10 @@ const ChooseTemplate = () => {
           <QRDownloadImages />
 
           <div className="flex justify-end mt-6">
-            <button className="px-6 py-3 rounded-lg font-semibold bg-yellow-500 text-black hover:bg-yellow-400 transition">
+            <button
+              onClick={() => navigate("/")}
+              className="px-6 py-3 rounded-lg font-semibold bg-yellow-500 text-black hover:bg-yellow-400 transition"
+            >
               Checkout →
             </button>
           </div>
