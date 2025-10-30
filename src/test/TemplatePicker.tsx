@@ -8,6 +8,9 @@ import { layoutC_Halloween1 } from "@/svgTemplatesString/layoutC_Halloween1";
 import { layoutC_Halloween2 } from "@/svgTemplatesString/layoutC_Halloween2";
 import TemplateCard from "./TemplateCard";
 import { usePhotoStore } from "@/store/photoStore";
+import { uploadSvgToCloudinary } from "@/utils/uploadSvgToCloudinary";
+import { dataUrlToFile } from "@/utils/dataUrlToFile";
+import { blobToBase64 } from "@/utils/blobToBase64";
 
 const layouts: Record<string, Record<string, string>> = {
   Classic: {
@@ -25,59 +28,63 @@ export default function TemplatePicker() {
   const [selectedCategory, setSelectedCategory] =
     useState<keyof typeof layouts>("Classic");
   const [selectedLayout, setSelectedLayout] = useState<string | null>(null);
-  const navigate = useNavigate();
 
   const { state } = useLocation();
   const blobs = usePhotoStore((s) => s.blobs);
   const layout: string = state?.layout || "";
 
+  const navigate = useNavigate();
+
   useEffect(() => {
-    const svg = selectedLayout
-      ? layouts[selectedCategory][selectedLayout]
-      : layout;
+    const run = async () => {
+      const svg = selectedLayout
+        ? layouts[selectedCategory][selectedLayout]
+        : layout;
 
-    if (!svg) return;
+      if (!svg) return;
 
+      const targetElement = document.getElementById("myDiv");
+      if (!targetElement) return;
+
+      let svgString = svg;
+      const base64Images = await Promise.all(blobs.map(blobToBase64));
+
+      base64Images.forEach((base64, index) => {
+        svgString = svgString.replace(
+          new RegExp(`(<image[^>]*id="photo-${index + 1}"[^>]*)/>`, "i"),
+          `$1 xlink:href="${base64}" />`
+        );
+      });
+
+      targetElement.innerHTML = svgString;
+    };
+    run();
+  }, [selectedLayout, selectedCategory, layout, blobs]);
+
+  const handleUploadAsPng = async () => {
+    if (!selectedLayout) return;
     const targetElement = document.getElementById("myDiv");
     if (!targetElement) return;
 
-    targetElement.innerHTML = svg;
-
-    blobs.forEach((blob, index) => {
-      const objectURL = URL.createObjectURL(blob);
-      const imageTag = targetElement.querySelector(`#photo-${index + 1}`);
-      if (imageTag) {
-        imageTag.setAttribute("href", objectURL);
-      }
-    });
-  }, [selectedLayout, selectedCategory, layout, blobs]);
-
-  // 🔑 Print handler right here
-  const handleNextAndPrint = async () => {
-    const node = document.getElementById("myDiv");
-    if (!node || !selectedLayout) return;
-
     try {
-      // Example: 4x6 at 300 DPI = 1200x1800
-      const dataUrl = await toPng(node, {
-        cacheBust: true,
-        width: 1200,
-        height: 1800,
-        style: {
-          transform: "scale(1)",
-          transformOrigin: "top left",
+      const dataUrl = await toPng(targetElement, { cacheBust: true });
+      const pngFile = dataUrlToFile(dataUrl, "final.png");
+
+      const result = await uploadSvgToCloudinary(
+        pngFile,
+        import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
+        import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET_SVG
+      );
+
+      navigate("/choosing-template", {
+        state: {
+          layout: layouts[selectedCategory][selectedLayout!],
         },
       });
 
-      // Send to Electron to print
-      window.electronAPI.printImage(dataUrl, { width: 1200, height: 1800 });
-
-      // Then navigate to next route
-      navigate("/choosing-template", {
-        state: { layout: layouts[selectedCategory][selectedLayout!] },
-      });
+      console.log("✅ PNG uploaded:", result.secure_url);
     } catch (err) {
-      console.error("Print failed", err);
+      console.error("❌ PNG upload failed:", err);
     }
   };
 
@@ -91,9 +98,7 @@ export default function TemplatePicker() {
           </h1>
         </div>
 
-        {/* Template List + Preview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Categories + options */}
           <div className="col-span-1">
             <div className="flex flex-col gap-3 mb-4">
               {Object.keys(layouts).map((cat) => (
@@ -127,7 +132,6 @@ export default function TemplatePicker() {
             </div>
           </div>
 
-          {/* Preview */}
           <div className="col-span-2 flex items-center justify-center rounded-lg border">
             {selectedLayout ? (
               <div className="flex items-center justify-center shadow-inner p-4">
@@ -142,7 +146,6 @@ export default function TemplatePicker() {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex justify-end mt-4">
           <button
             disabled={!selectedLayout}
@@ -151,9 +154,9 @@ export default function TemplatePicker() {
                 ? "bg-yellow-500 text-white hover:bg-yellow-600"
                 : "bg-gray-200 text-gray-500 cursor-not-allowed"
             }`}
-            onClick={handleNextAndPrint}
+            onClick={handleUploadAsPng}
           >
-            Next → (Auto Print)
+            Proceed
           </button>
         </div>
       </div>
