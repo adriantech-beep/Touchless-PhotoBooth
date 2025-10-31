@@ -29,6 +29,7 @@ const CameraCapture = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSelectingImages, setIsSelectingImages] = useState(false);
   const [selectedPhotoBlobs, setSelectedPhotoBlobs] = useState<Blob[]>([]);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   console.log(
     "Selected photo blobs length from CameraCapture:",
@@ -59,85 +60,110 @@ const CameraCapture = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  // const startCamera = async () => {
+  //   if (isVideoOn) return;
+
+  //   try {
+  //     const devices = await navigator.mediaDevices.enumerateDevices();
+  //     const videoDevices = devices.filter((d) => d.kind === "videoinput");
+
+  //     if (videoDevices.length === 0) {
+  //       console.warn("No camera devices found.");
+  //       return;
+  //     }
+
+  //     // Try to find Canon EOS camera
+  //     const canonDevice = videoDevices.find((device) =>
+  //       device.label.toLowerCase().includes("eos")
+  //     );
+
+  //     // Select preferred camera
+  //     const preferredDeviceId =
+  //       canonDevice?.deviceId || videoDevices[0]?.deviceId;
+
+  //     let stream: MediaStream | null = null;
+
+  //     try {
+  //       // Try the preferred camera first (Canon if available)
+  //       stream = await navigator.mediaDevices.getUserMedia({
+  //         video: {
+  //           deviceId: { exact: preferredDeviceId },
+  //           width: { ideal: 1280 },
+  //           height: { ideal: 720 },
+  //           aspectRatio: 16 / 9,
+  //         },
+  //       });
+  //     } catch (err) {
+  //       console.warn(
+  //         "Preferred camera not available, falling back to default camera.",
+  //         err
+  //       );
+
+  //       // Try again without specifying a device (fallback to system default)
+  //       stream = await navigator.mediaDevices.getUserMedia({
+  //         video: {
+  //           width: { ideal: 1280 },
+  //           height: { ideal: 720 },
+  //           aspectRatio: 16 / 9,
+  //         },
+  //       });
+  //     }
+
+  //     if (videoRef.current) {
+  //       videoRef.current.srcObject = stream;
+  //     }
+
+  //     setIsVideoOn(true);
+  //     setPhotoBlobs([]);
+  //     setPhotoPreviews([]);
+
+  //     console.log(
+  //       canonDevice
+  //         ? `🎥 Canon EOS detected: ${canonDevice.label}`
+  //         : `📷 Using default camera: ${videoDevices[0].label}`
+  //     );
+  //   } catch (error) {
+  //     console.error("Camera access denied or error:", error);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   navigator.mediaDevices.ondevicechange = async () => {
+  //     console.log("🔌 Camera devices changed — rechecking...");
+  //     if (isVideoOn) {
+  //       stopCamera();
+  //       await startCamera();
+  //     }
+  //   };
+  //   return () => {
+  //     navigator.mediaDevices.ondevicechange = null;
+  //   };
+  // }, [isVideoOn]);
+
   const startCamera = async () => {
-    if (isVideoOn) return;
+    if (isPreviewMode) return; // prevent re-opening preview
 
     try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter((d) => d.kind === "videoinput");
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          aspectRatio: 16 / 9,
+        },
+      });
 
-      if (videoDevices.length === 0) {
-        console.warn("No camera devices found.");
-        return;
-      }
+      if (videoRef.current) videoRef.current.srcObject = stream;
 
-      // Try to find Canon EOS camera
-      const canonDevice = videoDevices.find((device) =>
-        device.label.toLowerCase().includes("eos")
-      );
-
-      // Select preferred camera
-      const preferredDeviceId =
-        canonDevice?.deviceId || videoDevices[0]?.deviceId;
-
-      let stream: MediaStream | null = null;
-
-      try {
-        // Try the preferred camera first (Canon if available)
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            deviceId: { exact: preferredDeviceId },
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            aspectRatio: 16 / 9,
-          },
-        });
-      } catch (err) {
-        console.warn(
-          "Preferred camera not available, falling back to default camera.",
-          err
-        );
-
-        // Try again without specifying a device (fallback to system default)
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            aspectRatio: 16 / 9,
-          },
-        });
-      }
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-
-      setIsVideoOn(true);
+      setIsPreviewMode(true); // preview is active
+      setIsVideoOn(false); // not capturing yet
       setPhotoBlobs([]);
       setPhotoPreviews([]);
 
-      console.log(
-        canonDevice
-          ? `🎥 Canon EOS detected: ${canonDevice.label}`
-          : `📷 Using default camera: ${videoDevices[0].label}`
-      );
+      console.log("📷 Live preview started");
     } catch (error) {
       console.error("Camera access denied or error:", error);
     }
   };
-
-  useEffect(() => {
-    navigator.mediaDevices.ondevicechange = async () => {
-      console.log("🔌 Camera devices changed — rechecking...");
-      if (isVideoOn) {
-        stopCamera();
-        await startCamera();
-      }
-    };
-    return () => {
-      navigator.mediaDevices.ondevicechange = null;
-    };
-  }, [isVideoOn]);
 
   const clearAllTimeouts = () => {
     timeoutIdsRef.current.forEach((id) => clearTimeout(id));
@@ -159,6 +185,9 @@ const CameraCapture = () => {
     clearAllTimeouts();
 
     setIsVideoOn(false);
+    setIsPreviewMode(false);
+    setIsCapturing(false);
+
     setIsCountdown(false);
     setCountdown(null);
   };
@@ -240,9 +269,14 @@ const CameraCapture = () => {
 
   /** BOOTH SESSION **/
   const startBoothSession = async () => {
-    if (isVideoOn || isCapturing) return;
-    await startCamera();
+    if (isCapturing) return;
+
+    // If only in preview mode, reuse the stream
+    if (!isPreviewMode) await startCamera();
+
     isSessionActiveRef.current = true;
+    setIsVideoOn(true); // capturing session ON
+    setIsPreviewMode(false);
     let shot = 0;
 
     const takeNextShot = async () => {
@@ -294,6 +328,22 @@ const CameraCapture = () => {
     setIsSelectingImages(false);
     setIsEditing(true);
   };
+
+  useEffect(() => {
+    const autoStartPreview = async () => {
+      if (!isPreviewMode) {
+        console.log("🎥 Auto-starting live preview...");
+        await startCamera();
+      }
+    };
+
+    const timeout = setTimeout(autoStartPreview, 500);
+    return () => {
+      clearTimeout(timeout);
+      stopCamera();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (isProcessing) {
     return (
@@ -378,19 +428,18 @@ const CameraCapture = () => {
       <canvas ref={photoRef} className="hidden" />
 
       <div className="flex flex-col justify-center gap-3 md:gap-4 mt-4">
-        {!isVideoOn && photoBlobs.length === 0 && (
+        {isPreviewMode && !isVideoOn && photoBlobs.length === 0 && (
           <Button
-            onClick={startBoothSession}
-            disabled={isVideoOn}
+            onClick={() => startBoothSession()}
             variant="outline"
             className="rounded-full border-4 border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black w-24 h-24 md:w-32 md:h-32 flex flex-col items-center justify-center text-base md:text-lg font-semibold transition-all duration-300 bg-transparent"
           >
             <Camera size={20} className="md:size-22" />
-            Start
+            Start Capture
           </Button>
         )}
 
-        {isVideoOn && (
+        {isVideoOn && !isPreviewMode && (
           <>
             <Button
               onClick={stopCamera}
