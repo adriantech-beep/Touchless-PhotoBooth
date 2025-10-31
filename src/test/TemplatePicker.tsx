@@ -11,6 +11,10 @@ import { usePhotoStore } from "@/store/photoStore";
 import { uploadSvgToCloudinary } from "@/utils/uploadSvgToCloudinary";
 import { dataUrlToFile } from "@/utils/dataUrlToFile";
 import { blobToBase64 } from "@/utils/blobToBase64";
+import {
+  CLOUDINARY_CLOUD_NAME,
+  CLOUDINARY_UPLOAD_PRESET_SVG,
+} from "@/config/env";
 
 const layouts: Record<string, Record<string, string>> = {
   Classic: {
@@ -101,8 +105,8 @@ export default function TemplatePicker() {
       const pngFile = dataUrlToFile(dataUrl, "final.png");
       const result = await uploadSvgToCloudinary(
         pngFile,
-        import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
-        import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET_SVG
+        CLOUDINARY_CLOUD_NAME,
+        CLOUDINARY_UPLOAD_PRESET_SVG
       );
 
       console.log("✅ PNG uploaded:", result.secure_url);

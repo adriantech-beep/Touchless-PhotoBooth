@@ -1,8 +1,8 @@
-// utils/uploadToCloudinary.ts
+import { CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET } from "@/config/env";
+
 export async function uploadToCloudinary(blob: Blob): Promise<string> {
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset =
-    import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "ml_default";
+  const cloudName = CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = CLOUDINARY_UPLOAD_PRESET || "ml_default";
 
   if (!cloudName) {
     console.error("❌ Missing VITE_CLOUDINARY_CLOUD_NAME in .env");
