@@ -1,4 +1,3 @@
-// electron/main.js
 import { app, BrowserWindow, ipcMain } from "electron";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
@@ -10,11 +9,13 @@ const __dirname = dirname(__filename);
 let mainWindow;
 
 const createWindow = () => {
+  console.log(path.join(__dirname, "preload.js"));
+
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
+      // preload: path.join(__dirname, "preload.js"),
       nodeIntegration: false,
       contextIsolation: true,
     },
@@ -23,26 +24,34 @@ const createWindow = () => {
   if (process.env.VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
   } else {
-    mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
+    // 🧩 Production (Electron build)
+    // const indexPath = path.join(__dirname, "../dist/index.html");
+    // const fullPath = `file://${indexPath}#/`;
+    // console.log("🚀 Loading app from:", fullPath);
+    mainWindow.loadURL("https://photobooth-kappa-coral.vercel.app/");
   }
+
+  mainWindow.webContents.on("will-navigate", (event, url) => {
+    if (url.startsWith("file://")) return;
+    event.preventDefault();
+  });
 
   mainWindow.on("closed", () => (mainWindow = null));
 };
 
-// ✅ Silent printing logic
 ipcMain.on("print-final-image", async (event, dataUrl) => {
   console.log("🖨️ Received print-final-image event");
   try {
     const printWindow = new BrowserWindow({
       width: 600,
       height: 800,
-      show: false, // don’t show at all
-      focusable: false, // prevent stealing focus
-      skipTaskbar: true, // don’t appear on taskbar
-      transparent: true, // optional, reduces flicker
+      show: false,
+      focusable: false,
+      skipTaskbar: true,
+      transparent: true,
       webPreferences: {
-        offscreen: true, // runs headless-like
-        sandbox: false, // 👈 add this line
+        offscreen: true,
+        sandbox: false,
         webSecurity: false,
       },
     });
@@ -56,13 +65,12 @@ ipcMain.on("print-final-image", async (event, dataUrl) => {
       </html>`
     );
 
-    // Once loaded, silently print and close
     printWindow.webContents.on("did-finish-load", () => {
       printWindow.webContents.print(
         {
-          silent: true, // ✅ auto print to default printer
+          silent: true,
           printBackground: true,
-          deviceName: "", // leave blank to use default printer
+          deviceName: "",
         },
         (success, errorType) => {
           if (!success) console.error("❌ Print failed:", errorType);
