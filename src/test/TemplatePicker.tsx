@@ -110,6 +110,8 @@ export default function TemplatePicker() {
       );
 
       if (window.navigator.appVersion.includes("Electron/")) {
+        console.log("importing electron");
+
         import("electron").then((electron) => {
           electron.ipcRenderer.send("print-final-image", dataUrl);
         });
