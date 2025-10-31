@@ -28,7 +28,8 @@ const createWindow = () => {
     // const indexPath = path.join(__dirname, "../dist/index.html");
     // const fullPath = `file://${indexPath}#/`;
     // console.log("🚀 Loading app from:", fullPath);
-    mainWindow.loadURL("https://photobooth-kappa-coral.vercel.app/");
+    // mainWindow.loadURL("https://photobooth-kappa-coral.vercel.app/");
+    mainWindow.loadURL("http://localhost:5173");
   }
 
   mainWindow.webContents.on("will-navigate", (event, url) => {
