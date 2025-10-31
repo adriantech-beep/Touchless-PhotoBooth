@@ -76,6 +76,11 @@ export default function TemplatePicker() {
         import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET_SVG
       );
 
+       if (window.navigator.appVersion.includes("Electron/")) {
+        import("electron").then((electron) => {
+          electron.ipcRenderer.send("print-final-image", dataUrl);
+
+        });
       navigate("/choosing-template", {
         state: {
           layout: layouts[selectedCategory][selectedLayout!],
