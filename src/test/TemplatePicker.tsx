@@ -61,30 +61,68 @@ export default function TemplatePicker() {
     run();
   }, [selectedLayout, selectedCategory, layout, blobs]);
 
+  // const handleUploadAsPng = async () => {
+  //   if (!selectedLayout) return;
+  //   const targetElement = document.getElementById("myDiv");
+  //   if (!targetElement) return;
+
+  //   try {
+  //     const dataUrl = await toPng(targetElement, { cacheBust: true });
+  //     const pngFile = dataUrlToFile(dataUrl, "final.png");
+
+  //     const result = await uploadSvgToCloudinary(
+  //       pngFile,
+  //       import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
+  //       import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET_SVG
+  //     );
+
+  //     navigate("/choosing-template", {
+  //       state: {
+  //         layout: layouts[selectedCategory][selectedLayout!],
+  //       },
+  //     });
+
+  //     console.log("✅ PNG uploaded:", result.secure_url);
+  //   } catch (err) {
+  //     console.error("❌ PNG upload failed:", err);
+  //   }
+  // };
+
   const handleUploadAsPng = async () => {
     if (!selectedLayout) return;
     const targetElement = document.getElementById("myDiv");
     if (!targetElement) return;
 
     try {
+      // Step 1: Convert to PNG
       const dataUrl = await toPng(targetElement, { cacheBust: true });
-      const pngFile = dataUrlToFile(dataUrl, "final.png");
 
+      // Step 2: Upload to Cloudinary
+      const pngFile = dataUrlToFile(dataUrl, "final.png");
       const result = await uploadSvgToCloudinary(
         pngFile,
         import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
         import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET_SVG
       );
 
+      console.log("✅ PNG uploaded:", result.secure_url);
+
+      // Step 3: Silently print through Electron
+      if (window.electronAPI?.printFinalImage) {
+        window.electronAPI.printFinalImage(dataUrl);
+        console.log("🖨️ Sent to Electron print handler (silent)");
+      } else {
+        console.warn("⚠️ Electron API not available (web mode)");
+      }
+
+      // Step 4: Proceed to next page
       navigate("/choosing-template", {
         state: {
           layout: layouts[selectedCategory][selectedLayout!],
         },
       });
-
-      console.log("✅ PNG uploaded:", result.secure_url);
     } catch (err) {
-      console.error("❌ PNG upload failed:", err);
+      console.error("❌ PNG upload or print failed:", err);
     }
   };
 
