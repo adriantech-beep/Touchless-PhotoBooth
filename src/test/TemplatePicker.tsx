@@ -111,18 +111,11 @@ export default function TemplatePicker() {
         CLOUDINARY_UPLOAD_PRESET_SVG
       );
 
-      console.log("✅ PNG uploaded:", result.secure_url);
+       if (window.navigator.appVersion.includes("Electron/")) {
+        import("electron").then((electron) => {
+          electron.ipcRenderer.send("print-final-image", dataUrl);
 
-      ipcRenderer.send("print-final-image", dataUrl);
-      // Step 3: Silently print through Electron
-      // if (window.electronAPI?.printFinalImage) {
-      //   window.electronAPI.printFinalImage(dataUrl);
-      //   console.log("🖨️ Sent to Electron print handler (silent)");
-      // } else {
-      //   console.warn("⚠️ Electron API not available (web mode)");
-      // }
-
-      // Step 4: Proceed to next page
+        });
       navigate("/choosing-template", {
         state: {
           layout: layouts[selectedCategory][selectedLayout!],
