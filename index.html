@@ -6,7 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self' data: blob: filesystem:; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data: blob:;"
+      content="
+    default-src 'self' data: blob: filesystem:;
+    connect-src 'self' https://photosnap-backend-617644633769.asia-southeast1.run.app wss://photosnap-backend-617644633769.asia-southeast1.run.app;
+    img-src 'self' data: blob:;
+    style-src 'self' 'unsafe-inline';
+    script-src 'self';
+  "
     />
 
     <title>touchless-photobooth</title>
