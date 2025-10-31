@@ -100,13 +100,13 @@ const UploadImage = ({
           }}
         >
           <div className="relative w-48 h-48">
-            <div className="absolute inset-0 border-[10px] border-yellow-800 rounded-full" />
+            <div className="absolute inset-0 border-10 border-yellow-800 rounded-full" />
 
             <svg
               width="192"
               height="192"
               viewBox="0 0 120 120"
-              className="absolute inset-0 rotate-[-90deg]"
+              className="absolute inset-0 -rotate-90"
             >
               <circle
                 cx="60"
