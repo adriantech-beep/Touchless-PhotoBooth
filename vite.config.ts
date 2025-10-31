@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
     img-src 
       'self' 
       data: blob: 
-      https://res.cloudinary.com/${CLOUD_NAME};
+      https://res.cloudinary.com/${CLOUD_NAME}/;
     style-src 'self' 'unsafe-inline';
     script-src 'self';
     font-src 'self' data:;
