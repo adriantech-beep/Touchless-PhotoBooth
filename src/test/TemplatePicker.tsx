@@ -16,8 +16,6 @@ import {
   CLOUDINARY_UPLOAD_PRESET_SVG,
 } from "@/config/env";
 
-import { ipcRenderer } from "electron";
-
 const layouts: Record<string, Record<string, string>> = {
   Classic: {
     LayoutC_example: layoutC_example,
@@ -111,16 +109,17 @@ export default function TemplatePicker() {
         CLOUDINARY_UPLOAD_PRESET_SVG
       );
 
-       if (window.navigator.appVersion.includes("Electron/")) {
+      if (window.navigator.appVersion.includes("Electron/")) {
         import("electron").then((electron) => {
           electron.ipcRenderer.send("print-final-image", dataUrl);
-
         });
+      }
       navigate("/choosing-template", {
         state: {
           layout: layouts[selectedCategory][selectedLayout!],
         },
       });
+      console.log("✅ PNG uploaded:", result.secure_url);
     } catch (err) {
       console.error("❌ PNG upload or print failed:", err);
     }
