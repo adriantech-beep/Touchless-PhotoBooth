@@ -16,6 +16,8 @@ import {
   CLOUDINARY_UPLOAD_PRESET_SVG,
 } from "@/config/env";
 
+import { ipcRenderer } from "electron";
+
 const layouts: Record<string, Record<string, string>> = {
   Classic: {
     LayoutC_example: layoutC_example,
@@ -111,13 +113,14 @@ export default function TemplatePicker() {
 
       console.log("✅ PNG uploaded:", result.secure_url);
 
+      ipcRenderer.send("print-final-image", dataUrl);
       // Step 3: Silently print through Electron
-      if (window.electronAPI?.printFinalImage) {
-        window.electronAPI.printFinalImage(dataUrl);
-        console.log("🖨️ Sent to Electron print handler (silent)");
-      } else {
-        console.warn("⚠️ Electron API not available (web mode)");
-      }
+      // if (window.electronAPI?.printFinalImage) {
+      //   window.electronAPI.printFinalImage(dataUrl);
+      //   console.log("🖨️ Sent to Electron print handler (silent)");
+      // } else {
+      //   console.warn("⚠️ Electron API not available (web mode)");
+      // }
 
       // Step 4: Proceed to next page
       navigate("/choosing-template", {
